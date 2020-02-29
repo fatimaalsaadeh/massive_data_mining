@@ -1,6 +1,6 @@
 # People You Might Know
 
- ### MapReduce Algorithm Recommends to 10 friends sorted by the number of mutual friends
+ ### MapReduce Algorithm Recommends the top 10 friends based on the number of mutual friends
  ### The Algorithm :
  ### Map Procedure:
   ```
