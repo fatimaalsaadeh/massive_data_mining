@@ -1,4 +1,3 @@
-# massive_data_mining
 # People You Might Know
 
  ### MapReduce Algorithm Recommends to 10 friends sorted by the number of mutual friends
