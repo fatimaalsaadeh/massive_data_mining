@@ -16,14 +16,11 @@ public class ProductsRecommendations {
         new Apriori();
         Apriori.data = args[0];
         System.out.println("First Pass Start:");
-        Apriori.readFile(1);
-        Apriori.prune(1);
+        Apriori.pass(1);
         System.out.println("Second Pass Start:");
-        Apriori.readFile(2);
-        Apriori.prune(2);
+        Apriori.pass(2);
         System.out.println("Third Pass Start:");
-        Apriori.readFile(3);
-        Apriori.prune(3);
+        Apriori.pass(3);
         System.out.println("Get Pairs Rules Start:");
         Apriori.computePairRules();
         System.out.println("Get Triples Rules Start:");
@@ -41,7 +38,7 @@ public class ProductsRecommendations {
         public static HashMap<List<String>, Double> thirdPassRulesConf = new HashMap<>();
 
 
-        public static void readFile(Integer passNum) {
+        public static void pass(Integer passNum) {
             try {
                 Scanner scanner = new Scanner(new File(data));
                 while (scanner.hasNextLine()) {
@@ -61,6 +58,7 @@ public class ProductsRecommendations {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Apriori.prune(passNum);
         }
 
         public static void prune(Integer passNum) {
@@ -69,7 +67,7 @@ public class ProductsRecommendations {
                     Iterator<Map.Entry<String, Double>> firstPassIter = firstPassCounts.entrySet().iterator();
                     while (firstPassIter.hasNext()) {
                         Map.Entry<String, Double> entry = firstPassIter.next();
-                        if (entry.getValue() < 100) {
+                        if (entry.getValue() < 100.0) {
                             firstPassIter.remove();
                         }
                     }
@@ -77,7 +75,7 @@ public class ProductsRecommendations {
                 case 2:
                     Iterator<Map.Entry<HashSet<String>, Double>> secondPassIter = secondPassCount.entrySet().iterator();
                     while (secondPassIter.hasNext()) {
-                        if (secondPassIter.next().getValue() < 100) {
+                        if (secondPassIter.next().getValue() < 100.0) {
                             secondPassIter.remove();
                         }
                     }
@@ -86,7 +84,7 @@ public class ProductsRecommendations {
                     Iterator<Map.Entry<HashSet<String>, Double>> thirdPassIter = thirdPassCount.entrySet().iterator();
                     while (thirdPassIter.hasNext()) {
                         Map.Entry<HashSet<String>, Double> entry = thirdPassIter.next();
-                        if (entry.getValue() < 100) {
+                        if (entry.getValue() < 100.0) {
                             thirdPassIter.remove();
                         }
                     }
@@ -99,7 +97,7 @@ public class ProductsRecommendations {
             String[] sessionItems = line.split("\\s+");
             for (String item: sessionItems) {
                 if (firstPassCounts.containsKey(item)) {
-                    firstPassCounts.put(item, firstPassCounts.get(item) + 1);
+                    firstPassCounts.put(item, firstPassCounts.get(item) + 1.0);
                 } else {
                     firstPassCounts.put(item, 1.0);
                 }
@@ -111,7 +109,7 @@ public class ProductsRecommendations {
             HashSet<HashSet<String>> sessionPairItems = getPairs(line);
             for (HashSet<String> pair : sessionPairItems) {
                 if (secondPassCount.containsKey(pair)) {
-                    secondPassCount.put(pair, secondPassCount.get(pair) + 1);
+                    secondPassCount.put(pair, secondPassCount.get(pair) + 1.0);
                 } else {
                     secondPassCount.put(pair, 1.0);
                 }
@@ -122,7 +120,7 @@ public class ProductsRecommendations {
             HashSet<HashSet<String>> sessionTripleItems = getTriples(line);
             for (HashSet<String> triple : sessionTripleItems) {
                 if (thirdPassCount.containsKey(triple)) {
-                    thirdPassCount.put(triple, thirdPassCount.get(triple) + 1);
+                    thirdPassCount.put(triple, thirdPassCount.get(triple) + 1.0);
                 } else {
                     thirdPassCount.put(triple, 1.0);
                 }
@@ -153,8 +151,8 @@ public class ProductsRecommendations {
             String[] sessionItems = value.split("\\s+");
             HashSet<HashSet<String>> sessionItemsPairs = getPairs(value);
             HashSet<HashSet<String>> sessionItemsTriples = new HashSet<>();
-            for (String item1: sessionItems) {
-                for (HashSet<String> pair : sessionItemsPairs) {
+            for (HashSet<String> pair : sessionItemsPairs) {
+                for (String item1: sessionItems) {
                     if (firstPassCounts.containsKey(item1) && !pair.contains(item1)) {
                         HashSet<String> triple = new HashSet<>();
                         triple.add(item1);
@@ -172,23 +170,24 @@ public class ProductsRecommendations {
                 Map.Entry<HashSet<String>, Double> entry = iter.next();
                 Object[] pair = entry.getKey().toArray();
                 if (pair.length == 2) {
-                    HashSet<String> leftToRight = new HashSet<>();
-                    leftToRight.add(pair[0].toString());
-                    leftToRight.add(pair[1].toString());
-                    HashSet<String> RightToLeft = new HashSet<>();
-                    RightToLeft.add(pair[1].toString());
-                    RightToLeft.add(pair[0].toString());
-                    if (secondPassCount.get(leftToRight) != null) {
-                        double countPair1 = secondPassCount.get(leftToRight);
-                        double leftCount1 = firstPassCounts.get(pair[0].toString());
-                        double confidence1 = countPair1 / leftCount1;
-                        secondPassRulesConf.put(new ArrayList<>(leftToRight), confidence1);
+                    HashSet<String> c = new HashSet<>();
+                    c.addAll(new HashSet<>(Arrays.asList(pair[0].toString())));
+                    c.addAll(new HashSet<>(Arrays.asList(pair[1].toString())));
+                    HashSet<String> d = new HashSet<>();
+                    d.addAll(new HashSet<>(Arrays.asList(pair[1].toString())));
+                    d.addAll(new HashSet<>(Arrays.asList(pair[0].toString())));
+
+                    if (secondPassCount.get(c) != null) {
+                        double countPair = secondPassCount.get(c);
+                        double leftCount = firstPassCounts.get(pair[0]);
+                        double confidence = countPair/leftCount;
+                        secondPassRulesConf.put(new ArrayList<>(c), confidence);
                     }
-                    if (secondPassCount.get(RightToLeft) != null) {
-                        double countPair2 = secondPassCount.get(RightToLeft);
-                        double leftCount2 = firstPassCounts.get(pair[1].toString());
-                        double confidence2 = countPair2 / leftCount2;
-                        secondPassRulesConf.put(new ArrayList<>(RightToLeft), confidence2);
+                    if (secondPassCount.get(d) != null) {
+                        double countPair = secondPassCount.get(d);
+                        double leftCount = firstPassCounts.get(pair[1]);
+                        double confidence = countPair/leftCount;
+                        secondPassRulesConf.put(new ArrayList<>(d), confidence);
                     }
                 }
 
@@ -197,21 +196,21 @@ public class ProductsRecommendations {
         }
 
         public static void getRule(String key1, String key2, String key3) {
-            HashSet<String> left2 = new HashSet<>();
-            left2.add(key1);
-            left2.add(key3);
-            HashSet<String> right2 = new HashSet<>();
-            right2.add(key2);
-            HashSet<String> t2 = new HashSet<>();
-            t2.addAll(left2);
-            t2.addAll(right2);
-            if (secondPassCount.get(left2) != null && thirdPassCount.get(t2) != null) {
-                double countPair2 = secondPassCount.get(left2);
-                double countTriple2 = thirdPassCount.get(t2);
+            HashSet<String> left = new HashSet<>();
+            left.add(key1);
+            left.add(key2);
+            HashSet<String> right = new HashSet<>();
+            right.add(key3);
+            HashSet<String> triple = new HashSet<>();
+            triple.addAll(left);
+            triple.addAll(right);
+            if (secondPassCount.get(left) != null && thirdPassCount.get(triple) != null) {
+                double countPair2 = secondPassCount.get(left);
+                double countTriple2 = thirdPassCount.get(triple);
                 double confidence2 = countTriple2 / countPair2;
-                thirdPassRulesConf.put(new ArrayList<>(t2), confidence2);
+                thirdPassRulesConf.put(new ArrayList<>(triple), confidence2);
             } else {
-                thirdPassRulesConf.put(new ArrayList<>(t2), 0.0);
+                thirdPassRulesConf.put(new ArrayList<>(triple), 0.0);
             }
         }
 
@@ -231,15 +230,15 @@ public class ProductsRecommendations {
                                 }
                             }
                         }
+
                     }
                 }
+
 
             }
         }
 
         public static void printRules(HashMap<List<String>, Double> rules, String outputFile) {
-
-
             try {
                 FileWriter myWriter = new FileWriter(outputFile);
                 Apriori.MyComparator comparator1 = new Apriori.MyComparator(rules);
@@ -254,9 +253,9 @@ public class ProductsRecommendations {
                     myWriter.write(entry1.getKey().toString() + "=" + entry1.getValue().toString()+"\n");
                 }
                 myWriter.close();
-                System.out.println("Successfully wrote to the file.");
+                System.out.println("Writing Finished Successfully.");
             } catch (IOException e) {
-                System.out.println("An error occurred.");
+                System.out.println("Writing Error.");
                 e.printStackTrace();
             }
         }
