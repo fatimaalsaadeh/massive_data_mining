@@ -4,12 +4,12 @@ import java.io.*;
 import java.util.*;
 
 /*
-* Fatima AlSaadeh
-* Product Recommendation System
-*  A-priori algorithm to find products which are frequently browsed together.
-*  Fix the support to s = 100 (i.e. product pairs need to occur together at least 100 times to be considered frequent)
-*  and find itemsets of size 2 and 3.
-* */
+ * Fatima AlSaadeh
+ * Product Recommendation System
+ *  A-priori algorithm to find products which are frequently browsed together.
+ *  Fix the support to s = 100 (i.e. product pairs need to occur together at least 100 times to be considered frequent)
+ *  and find itemsets of size 2 and 3.
+ * */
 public class AssociationRules {
 
     public static void main(String[] args) {
@@ -95,7 +95,7 @@ public class AssociationRules {
 
         public static void firstPass(String line) {
             String[] sessionItems = line.split("\\s+");
-            for (String item: sessionItems) {
+            for (String item : sessionItems) {
                 if (firstPassCounts.containsKey(item)) {
                     firstPassCounts.put(item, firstPassCounts.get(item) + 1.0);
                 } else {
@@ -106,18 +106,53 @@ public class AssociationRules {
 
 
         public static void secondPass(String line) {
-            HashSet<HashSet<String>> sessionPairItems = getPairs(line);
-            for (HashSet<String> pair : sessionPairItems) {
+            String[] sessionItems = line.split("\\s+");
+            HashSet<HashSet<String>> sessionPairsItems = new HashSet<>();
+            for (String item1: sessionItems) {
+                for (String item2: sessionItems) {
+                    if(!item1.equals(item2)) {
+                        if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
+                            HashSet<String> pair = new HashSet<>();
+                            pair.add(item1);
+                            pair.add(item2);
+                            sessionPairsItems.add(pair);
+                        }
+                    }
+                }
+            }
+            for (HashSet<String> pair : sessionPairsItems) {
                 if (secondPassCount.containsKey(pair)) {
                     secondPassCount.put(pair, secondPassCount.get(pair) + 1.0);
                 } else {
                     secondPassCount.put(pair, 1.0);
                 }
             }
+
         }
 
         public static void thirdPass(String line) {
-            HashSet<HashSet<String>> sessionTripleItems = getTriples(line);
+            String[] sessionItems = line.split("\\s+");
+            HashSet<HashSet<String>> sessionTripleItems = new HashSet<>();
+            for (String item1 : sessionItems) {
+                for (String item2 : sessionItems) {
+                    if (!item1.equals(item2)) {
+                        if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
+                            HashSet<String> sessionPairs = new HashSet<>();
+                            sessionPairs.add(item1);
+                            sessionPairs.add(item2);
+                            for (String item3 : sessionItems) {
+                                if (secondPassCount.containsKey(sessionPairs) && firstPassCounts.containsKey(item3)
+                                        && !item1.equals(item3) && !item2.equals(item3)) {
+                                    HashSet<String> triple = new HashSet<>();
+                                    triple.addAll(sessionPairs);
+                                    triple.add(item3);
+                                    sessionTripleItems.add(triple);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             for (HashSet<String> triple : sessionTripleItems) {
                 if (thirdPassCount.containsKey(triple)) {
                     thirdPassCount.put(triple, thirdPassCount.get(triple) + 1.0);
@@ -127,67 +162,37 @@ public class AssociationRules {
             }
         }
 
-
-        public static HashSet<HashSet<String>> getPairs(String line) {
-            String[] sessionItems = line.split("\\s+");
-            HashSet<HashSet<String>> sessionPairs = new HashSet<>();
-            for (String item1: sessionItems) {
-                for (String item2: sessionItems) {
-                    if(!item1.equals(item2)) {
-                        if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
-                            HashSet<String> pair = new HashSet<>();
-                            pair.add(item1);
-                            pair.add(item2);
-                            sessionPairs.add(pair);
-                        }
-                    }
-                }
-            }
-            return sessionPairs;
-        }
-
-
-        public static HashSet<HashSet<String>> getTriples(String value) {
-            String[] sessionItems = value.split("\\s+");
-            HashSet<HashSet<String>> sessionItemsPairs = getPairs(value);
-            HashSet<HashSet<String>> sessionItemsTriples = new HashSet<>();
-            for (HashSet<String> pair : sessionItemsPairs) {
-                for (String item1: sessionItems) {
-                    if (firstPassCounts.containsKey(item1) && !pair.contains(item1)) {
-                        HashSet<String> triple = new HashSet<>();
-                        triple.add(item1);
-                        triple.addAll(pair);
-                        sessionItemsTriples.add(triple);
-                    }
-                }
-            }
-            return sessionItemsTriples;
-        }
-
         public static void computePairRules() {
             Iterator<Map.Entry<HashSet<String>, Double>> iter = secondPassCount.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry<HashSet<String>, Double> entry = iter.next();
                 Object[] pair = entry.getKey().toArray();
                 if (pair.length == 2) {
-                    HashSet<String> c = new HashSet<>();
-                    c.addAll(new HashSet<>(Arrays.asList(pair[0].toString())));
-                    c.addAll(new HashSet<>(Arrays.asList(pair[1].toString())));
-                    HashSet<String> d = new HashSet<>();
-                    d.addAll(new HashSet<>(Arrays.asList(pair[1].toString())));
-                    d.addAll(new HashSet<>(Arrays.asList(pair[0].toString())));
+                    HashSet<String> left = new HashSet<>();
+                    left.add(pair[0].toString());
 
-                    if (secondPassCount.get(c) != null) {
-                        double countPair = secondPassCount.get(c);
+                    HashSet<String> right = new HashSet<>();
+                    right.add(pair[1].toString());
+
+                    HashSet<String> pair1 = new HashSet<>();
+                    pair1.addAll(left);
+                    pair1.addAll(right);
+
+                    HashSet<String> pair2 = new HashSet<>();
+                    pair2.addAll(right);
+                    pair2.addAll(left);
+
+                    if (secondPassCount.get(pair1) != null) {
+                        double countPair = secondPassCount.get(pair1);
                         double leftCount = firstPassCounts.get(pair[0]);
                         double confidence = countPair/leftCount;
-                        secondPassRulesConf.put(new ArrayList<>(c), confidence);
+                        secondPassRulesConf.put(new ArrayList<>(pair1), confidence);
                     }
-                    if (secondPassCount.get(d) != null) {
-                        double countPair = secondPassCount.get(d);
+                    if (secondPassCount.get(pair2) != null) {
+                        double countPair = secondPassCount.get(pair2);
                         double leftCount = firstPassCounts.get(pair[1]);
                         double confidence = countPair/leftCount;
-                        secondPassRulesConf.put(new ArrayList<>(d), confidence);
+                        secondPassRulesConf.put(new ArrayList<>(pair2), confidence);
                     }
                 }
 
@@ -250,7 +255,7 @@ public class AssociationRules {
                 Map.Entry<List<String>, Double> entry1;
                 while (iter1.hasNext()) {
                     entry1 = iter1.next();
-                    myWriter.write(entry1.getKey().toString() + "=" + entry1.getValue().toString()+"\n");
+                    myWriter.write(entry1.getKey().toString() + "=" + entry1.getValue().toString() + "\n");
                 }
                 myWriter.close();
                 System.out.println("Writing Finished Successfully.");
