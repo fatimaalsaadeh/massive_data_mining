@@ -31,8 +31,8 @@ public class question_2 {
 
     static class Apriori {
         public static HashMap<String, Double> firstPassCounts = new HashMap<>();
-        public static HashMap<HashSet<String>, Double> secondPassCount = new HashMap<>();
-        public static HashMap<HashSet<String>, Double> thirdPassCount = new HashMap<>();
+        public static HashMap<List<String>, Double> secondPassCount = new HashMap<>();
+        public static HashMap<List<String>, Double> thirdPassCount = new HashMap<>();
         public static String data;
         public static HashMap<List<String>, Double> secondPassRulesConf = new HashMap<>();
         public static HashMap<List<String>, Double> thirdPassRulesConf = new HashMap<>();
@@ -73,7 +73,7 @@ public class question_2 {
                     }
                     break;
                 case 2:
-                    Iterator<Map.Entry<HashSet<String>, Double>> secondPassIter = secondPassCount.entrySet().iterator();
+                    Iterator<Map.Entry<List<String>, Double>> secondPassIter = secondPassCount.entrySet().iterator();
                     while (secondPassIter.hasNext()) {
                         if (secondPassIter.next().getValue() < 100.0) {
                             secondPassIter.remove();
@@ -81,9 +81,9 @@ public class question_2 {
                     }
                     break;
                 case 3:
-                    Iterator<Map.Entry<HashSet<String>, Double>> thirdPassIter = thirdPassCount.entrySet().iterator();
+                    Iterator<Map.Entry<List<String>, Double>> thirdPassIter = thirdPassCount.entrySet().iterator();
                     while (thirdPassIter.hasNext()) {
-                        Map.Entry<HashSet<String>, Double> entry = thirdPassIter.next();
+                        Map.Entry<List<String>, Double> entry = thirdPassIter.next();
                         if (entry.getValue() < 100.0) {
                             thirdPassIter.remove();
                         }
@@ -107,24 +107,20 @@ public class question_2 {
 
         public static void secondPass(String line) {
             String[] sessionItems = line.split("\\s+");
-            HashSet<HashSet<String>> sessionPairsItems = new HashSet<>();
             for (String item1: sessionItems) {
                 for (String item2: sessionItems) {
                     if(!item1.equals(item2)) {
                         if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
-                            HashSet<String> pair = new HashSet<>();
+                            List<String> pair = new ArrayList<>();
                             pair.add(item1);
                             pair.add(item2);
-                            sessionPairsItems.add(pair);
+                            if (secondPassCount.containsKey(pair)) {
+                                secondPassCount.put(pair, secondPassCount.get(pair) + 1.0);
+                            } else {
+                                secondPassCount.put(pair, 1.0);
+                            }
                         }
                     }
-                }
-            }
-            for (HashSet<String> pair : sessionPairsItems) {
-                if (secondPassCount.containsKey(pair)) {
-                    secondPassCount.put(pair, secondPassCount.get(pair) + 1.0);
-                } else {
-                    secondPassCount.put(pair, 1.0);
                 }
             }
 
@@ -132,55 +128,47 @@ public class question_2 {
 
         public static void thirdPass(String line) {
             String[] sessionItems = line.split("\\s+");
-            HashSet<HashSet<String>> sessionTripleItems = new HashSet<>();
             for (String item1 : sessionItems) {
                 for (String item2 : sessionItems) {
                     if (!item1.equals(item2)) {
                         if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
-                            HashSet<String> sessionPairs = new HashSet<>();
+                            List<String> sessionPairs = new ArrayList<>();
                             sessionPairs.add(item1);
                             sessionPairs.add(item2);
                             for (String item3 : sessionItems) {
                                 if (secondPassCount.containsKey(sessionPairs) && firstPassCounts.containsKey(item3)
                                         && !item1.equals(item3) && !item2.equals(item3)) {
-                                    HashSet<String> triple = new HashSet<>();
+                                    List<String> triple = new ArrayList<>();
                                     triple.addAll(sessionPairs);
                                     triple.add(item3);
-                                    sessionTripleItems.add(triple);
+                                    if (thirdPassCount.containsKey(triple)) {
+                                        thirdPassCount.put(triple, thirdPassCount.get(triple) + 1.0);
+                                    } else {
+                                        thirdPassCount.put(triple, 1.0);
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-            for (HashSet<String> triple : sessionTripleItems) {
-                if (thirdPassCount.containsKey(triple)) {
-                    thirdPassCount.put(triple, thirdPassCount.get(triple) + 1.0);
-                } else {
-                    thirdPassCount.put(triple, 1.0);
-                }
-            }
+
         }
 
         public static void computePairRules() {
-            Iterator<Map.Entry<HashSet<String>, Double>> iter = secondPassCount.entrySet().iterator();
+            Iterator<Map.Entry<List<String>, Double>> iter = secondPassCount.entrySet().iterator();
             while (iter.hasNext()) {
-                Map.Entry<HashSet<String>, Double> entry = iter.next();
+                Map.Entry<List<String>, Double> entry = iter.next();
                 Object[] pair = entry.getKey().toArray();
                 if (pair.length == 2) {
-                    HashSet<String> left = new HashSet<>();
-                    left.add(pair[0].toString());
 
-                    HashSet<String> right = new HashSet<>();
-                    right.add(pair[1].toString());
+                    List<String> pair1 = new ArrayList<>();
+                    pair1.add(pair[0].toString());
+                    pair1.add(pair[1].toString());
 
-                    HashSet<String> pair1 = new HashSet<>();
-                    pair1.addAll(left);
-                    pair1.addAll(right);
-
-                    HashSet<String> pair2 = new HashSet<>();
-                    pair2.addAll(right);
-                    pair2.addAll(left);
+                    List<String> pair2 = new ArrayList<>();
+                    pair2.add(pair[1].toString());
+                    pair2.add(pair[0].toString());
 
                     if (secondPassCount.get(pair1) != null) {
                         double countPair = secondPassCount.get(pair1);
@@ -201,14 +189,12 @@ public class question_2 {
         }
 
         public static void getRule(String key1, String key2, String key3) {
-            HashSet<String> left = new HashSet<>();
+            List<String> left = new ArrayList<>();
             left.add(key1);
             left.add(key2);
-            HashSet<String> right = new HashSet<>();
-            right.add(key3);
-            HashSet<String> triple = new HashSet<>();
+            List<String> triple = new ArrayList<>();
             triple.addAll(left);
-            triple.addAll(right);
+            triple.add(key3);
             if (secondPassCount.get(left) != null && thirdPassCount.get(triple) != null) {
                 double countPair2 = secondPassCount.get(left);
                 double countTriple2 = thirdPassCount.get(triple);
@@ -220,10 +206,10 @@ public class question_2 {
         }
 
         public static void getTriplesRules() {
-            Iterator<Map.Entry<HashSet<String>, Double>> iter = thirdPassCount.entrySet().iterator();
+            Iterator<Map.Entry<List<String>, Double>> iter = thirdPassCount.entrySet().iterator();
             while (iter.hasNext()) {
-                Map.Entry<HashSet<String>, Double> entry = iter.next();
-                HashSet<String> triple = entry.getKey();
+                Map.Entry<List<String>, Double> entry = iter.next();
+                List<String> triple = entry.getKey();
                 for (String key1 : triple) {
                     for (String key2 : triple) {
                         if (!key1.equals(key2)) {
