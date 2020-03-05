@@ -10,7 +10,7 @@ import java.util.*;
  *  Fix the support to s = 100 (i.e. product pairs need to occur together at least 100 times to be considered frequent)
  *  and find itemsets of size 2 and 3.
  * */
-public class AssociationRules {
+public class question_2 {
 
     public static void main(String[] args) {
         new Apriori();

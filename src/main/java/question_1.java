@@ -55,12 +55,12 @@ import static java.util.stream.Collectors.toList;
 *    9993	9990,9994,9987,9988,9989,9991,35667,9992,13134,13478
 * */
 
-public class MapReducePeople {
+public class question_1 {
 
     public static void main(String[] args) throws Exception {
         System.out.println(Arrays.toString(args));
-        Job job = new Job(new Configuration(), "MapReducePeople");
-        job.setJarByClass(MapReducePeople.class);
+        Job job = new Job(new Configuration(), "question_1");
+        job.setJarByClass(question_1.class);
         job.setMapOutputKeyClass(IntWritable.class);
         job.setMapOutputValueClass(MyPair.class);
         job.setOutputKeyClass(Text.class);
