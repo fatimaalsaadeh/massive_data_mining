@@ -86,11 +86,13 @@ public class question_1 {
             if (userToFriendsList != null && userToFriendsList.length == 2) {
                 Integer user = Integer.parseInt(userToFriendsList[0]);
                 List<Integer> friends = Arrays.asList(userToFriendsList[1].split(",")).stream().map(Integer::parseInt).collect(toList());
-                for (int i = 0; i < friends.size(); i++) {
-                    context.write(new IntWritable(user), new MyPair(friends.get(i), 0));
-                    for (int j = i + 1; j < friends.size(); j++) {
-                        context.write(new IntWritable(friends.get(i)), new MyPair((friends.get(j)), 1));
-                        context.write(new IntWritable(friends.get(j)), new MyPair((friends.get(i)), 1));
+                for (Integer friend1 : friends) {
+                    context.write(new IntWritable(user), new MyPair(friend1, 0));
+                    for (Integer friend2: friends) {
+                        if(friend1!=friend2) {
+                            context.write(new IntWritable(friend1), new MyPair(friend2, 1));
+                            context.write(new IntWritable(friend1), new MyPair(friend2, 1));
+                        }
                     }
                 }
             }

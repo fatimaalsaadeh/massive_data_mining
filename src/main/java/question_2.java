@@ -14,19 +14,14 @@ public class question_2 {
 
     public static void main(String[] args) {
         new Apriori();
-        Apriori.data = args[0];
-        System.out.println("First Pass Start:");
+        Apriori.data = "src/main/resources/data/browsing.txt";
         Apriori.pass(1);
-        System.out.println("Second Pass Start:");
         Apriori.pass(2);
-        System.out.println("Third Pass Start:");
         Apriori.pass(3);
-        System.out.println("Get Pairs Rules Start:");
-        Apriori.computePairRules();
-        System.out.println("Get Triples Rules Start:");
-        Apriori.getTriplesRules();
-        Apriori.printRules(Apriori.secondPassRulesConf, "PairRule.txt");
-        Apriori.printRules(Apriori.thirdPassRulesConf, "TripleRule.txt");
+        Apriori.pairConfidence();
+        Apriori.tripleConfidence();
+        Apriori.printRules(Apriori.secondPassConf, "PairRule.txt");
+        Apriori.printRules(Apriori.thirdPassConf, "TripleRule.txt");
     }
 
     static class Apriori {
@@ -34,8 +29,8 @@ public class question_2 {
         public static HashMap<List<String>, Double> secondPassCount = new HashMap<>();
         public static HashMap<List<String>, Double> thirdPassCount = new HashMap<>();
         public static String data;
-        public static HashMap<List<String>, Double> secondPassRulesConf = new HashMap<>();
-        public static HashMap<List<String>, Double> thirdPassRulesConf = new HashMap<>();
+        public static HashMap<List<String>, Double> secondPassConf = new HashMap<>();
+        public static HashMap<List<String>, Double> thirdPassConf = new HashMap<>();
 
 
         public static void pass(Integer passNum) {
@@ -107,9 +102,9 @@ public class question_2 {
 
         public static void secondPass(String line) {
             String[] sessionItems = line.split("\\s+");
-            for (String item1: sessionItems) {
-                for (String item2: sessionItems) {
-                    if(!item1.equals(item2)) {
+            for (String item1 : sessionItems) {
+                for (String item2 : sessionItems) {
+                    if (!item1.equals(item2)) {
                         if (firstPassCounts.containsKey(item1) && firstPassCounts.containsKey(item2)) {
                             List<String> pair = new ArrayList<>();
                             pair.add(item1);
@@ -155,32 +150,32 @@ public class question_2 {
 
         }
 
-        public static void computePairRules() {
-            Iterator<Map.Entry<List<String>, Double>> iter = secondPassCount.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry<List<String>, Double> entry = iter.next();
-                Object[] pair = entry.getKey().toArray();
-                if (pair.length == 2) {
+        public static void pairConfidence() {
+            for (List<String> sc : secondPassCount.keySet()) {
+                List<String> pair = sc;
+                for (String key1 : pair) {
+                    for (String key2 : pair) {
+                        if (!key1.equals(key2)) {
+                            List<String> pair1 = new ArrayList<>();
+                            pair1.add(key1);
+                            pair1.add(key2);
+                            List<String> pair2 = new ArrayList<>();
+                            pair2.add(key2);
+                            pair2.add(key1);
+                            if (secondPassCount.get(pair1) != null) {
+                                double countPair = secondPassCount.get(pair1);
+                                double leftCount = firstPassCounts.get(key1);
+                                double confidence = countPair / leftCount;
+                                secondPassConf.put(pair1, confidence);
+                            }
+                            if (secondPassCount.get(pair2) != null) {
+                                double countPair = secondPassCount.get(pair2);
+                                double leftCount = firstPassCounts.get(key2);
+                                double confidence = countPair / leftCount;
+                                secondPassConf.put(pair2, confidence);
+                            }
 
-                    List<String> pair1 = new ArrayList<>();
-                    pair1.add(pair[0].toString());
-                    pair1.add(pair[1].toString());
-
-                    List<String> pair2 = new ArrayList<>();
-                    pair2.add(pair[1].toString());
-                    pair2.add(pair[0].toString());
-
-                    if (secondPassCount.get(pair1) != null) {
-                        double countPair = secondPassCount.get(pair1);
-                        double leftCount = firstPassCounts.get(pair[0]);
-                        double confidence = countPair/leftCount;
-                        secondPassRulesConf.put(new ArrayList<>(pair1), confidence);
-                    }
-                    if (secondPassCount.get(pair2) != null) {
-                        double countPair = secondPassCount.get(pair2);
-                        double leftCount = firstPassCounts.get(pair[1]);
-                        double confidence = countPair/leftCount;
-                        secondPassRulesConf.put(new ArrayList<>(pair2), confidence);
+                        }
                     }
                 }
 
@@ -199,17 +194,15 @@ public class question_2 {
                 double countPair2 = secondPassCount.get(left);
                 double countTriple2 = thirdPassCount.get(triple);
                 double confidence2 = countTriple2 / countPair2;
-                thirdPassRulesConf.put(new ArrayList<>(triple), confidence2);
+                thirdPassConf.put(triple, confidence2);
             } else {
-                thirdPassRulesConf.put(new ArrayList<>(triple), 0.0);
+                thirdPassConf.put(triple, 0.0);
             }
         }
 
-        public static void getTriplesRules() {
-            Iterator<Map.Entry<List<String>, Double>> iter = thirdPassCount.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry<List<String>, Double> entry = iter.next();
-                List<String> triple = entry.getKey();
+        public static void tripleConfidence() {
+            for (List<String> tp : thirdPassCount.keySet()) {
+                List<String> triple = tp;
                 for (String key1 : triple) {
                     for (String key2 : triple) {
                         if (!key1.equals(key2)) {
